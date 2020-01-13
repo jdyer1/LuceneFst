@@ -10,12 +10,12 @@ namespace Fst
         {
             int iters = 1;
             int maxBytes = 20000;
-            for (int iter = 0; int < iters; iter++)
+            for (int iter = 0; iter < iters; iter++)
             {
                 int numBytes = 1; //TODO: random 1-maxBytes-1
                 byte[] expected = new byte[numBytes];
                 int blockBits = 8; //TODO: random 8-15
-                BytesStore bytes = new BytesStore(bockBits);
+                BytesStore bytes = new BytesStore(blockBits);
 
                 int pos = 0;
                 while (pos < numBytes)

@@ -3,9 +3,9 @@ using System;
 namespace Fst {
     class BytesStore {
 
-        readonly int blockbits;
+        readonly int blockBits;
         public BytesStore(int blockBits) {
-            this.blockbits = blockbits;
+            this.blockBits = blockBits;
         }
 
         public void writeByte(byte b) {
