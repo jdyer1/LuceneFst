@@ -73,7 +73,15 @@ namespace Fst
 
         public BytesReader getReverseReader()
         {
-            return null; //TODO
+            return getReverseReader(true);
+        }
+
+        BytesReader getReverseReader(Boolean allowSingle)
+        {
+            if (allowSingle && blocks.Count == 1) {
+                return new ReverseBytesReader(blocks[0]);
+            }
+            return new BytesStoreReverseReader(this);
         }
 
         public BytesReader getForwardReader()
@@ -151,8 +159,66 @@ namespace Fst
                 Debug.Assert(getPosition() == pos);
             }
 
-            public override bool reversed() {
+            public override bool reversed()
+            {
                 return false;
+            }
+        }
+        class BytesStoreReverseReader : BytesReader
+        {
+
+            private BytesStore bytesStore;
+            private byte[] current;
+            private int nextBuffer;
+            private int nextRead;
+
+            public BytesStoreReverseReader(BytesStore bytesStore)
+            {
+                this.bytesStore = bytesStore;
+                this.nextRead = 0;
+                this.nextBuffer = -1;
+                this.current = bytesStore.blocks.Count == 0 ? null : bytesStore.blocks[0];
+            }
+
+            public override byte readByte()
+            {
+                if (nextRead == -1)
+                {
+                    current = bytesStore.blocks[nextBuffer--];
+                    nextRead = bytesStore.blockSize - 1;
+                }
+                return current[nextRead--];
+            }
+
+            public override void skipBytes(int count)
+            {
+                setPosition(getPosition() - count);
+            }
+
+            public override void readBytes(byte[] b, int offset, int len)
+            {
+                for (int i = 0; i < len; i++)
+                {
+                    b[offset + i] = readByte();
+                }
+            }
+            public override long getPosition()
+            {
+                return ((long)nextBuffer + 1) * bytesStore.blockSize + nextRead;
+            }
+
+            public override void setPosition(long pos)
+            {
+                int bufferIndex = (int)(pos >> bytesStore.blockBits);
+                nextBuffer = bufferIndex - 1;
+                current = bytesStore.blocks[bufferIndex];
+                nextRead = (int)(pos & bytesStore.blockMask);
+                Debug.Assert(getPosition() == pos);
+            }
+
+            public override bool reversed()
+            {
+                return true;
             }
         }
 

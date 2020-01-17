@@ -35,17 +35,17 @@ namespace Fst
 
                     Assert.Equal(pos, bytes.getPosition());
 
-                    if (pos > 0)
+                    /*if (pos > 0)
                     { // TODO: && random().nextInt(50) == 17 
                         int upTo = Math.Min(pos, 100);
                         int len = 1;//TODO: random between 1 and  (upto-1)
                         bytes.truncate(pos - len);
                         pos -= 1;
                         Array.Clear(expected, pos, (pos + len));
-                    }
+                    }*/
                     if (pos > 0)
                     { // TODO:  && random().nextInt(200) == 17 
-                        //TODO: verify(bytes, expected, pos)
+                        verify(bytes, expected, pos);
                     }
 
                 }
