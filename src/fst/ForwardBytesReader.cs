@@ -15,7 +15,7 @@ namespace Fst {
         }
 
         public override void readBytes(byte[] b, int offset, int len) {
-            Array.Copy(this.bytes, pos, bytes, offset, len);
+            Array.Copy(this.bytes, pos, b, offset, len);
             pos += len;
         }
 

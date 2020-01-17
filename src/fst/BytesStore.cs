@@ -43,6 +43,173 @@ namespace Fst
             current[nextWrite++] = b;
         }
 
+        public void writeBytes(byte[] b, int offset, int len)
+        {
+            while (len > 0)
+            {
+                int chunk = blockSize - nextWrite;
+                if (len <= chunk)
+                {
+                    Debug.Assert(b != null);
+                    Debug.Assert(current != null);
+                    Array.Copy(b, offset, current, nextWrite, len);
+                    nextWrite += len;
+                    break;
+                }
+                else
+                {
+                    if (chunk > 0)
+                    {
+                        Array.Copy(b, offset, current, nextWrite, chunk);
+                        offset += chunk;
+                        len -= chunk;
+                    }
+                    current = new byte[blockSize];
+                    blocks.Add(current);
+                    nextWrite = 0;
+                }
+            }
+        }
+
+        public void writeBytes(long dest, byte[] b, int offset, int len)
+        {
+            long end = dest + len;
+            int blockIndex = (int)(end >> blockBits);
+            int downTo = (int)(end & blockMask);
+            if (downTo == 0)
+            {
+                blockIndex--;
+                downTo = blockSize;
+            }
+            byte[] block = blocks[blockIndex];
+
+            while (len > 0)
+            {
+                if (len <= downTo)
+                {
+                    Array.Copy(b, offset, block, downTo - len, len);
+                    break;
+                }
+                else
+                {
+                    len -= downTo;
+                    Array.Copy(b, offset + len, block, 0, downTo);
+                    blockIndex--;
+                    block = blocks[blockIndex];
+                    downTo = blockSize;
+                }
+            }
+        }
+
+        public void copyBytes(long src, long dest, int len)
+        {
+            Debug.Assert(src < dest);
+
+            long end = src + len;
+
+            int blockIndex = (int)(end >> blockBits);
+            int downTo = (int)(end & blockMask);
+            if (downTo == 0)
+            {
+                blockIndex--;
+                downTo = blockSize;
+            }
+            byte[] block = blocks[blockIndex];
+
+            while (len > 0)
+            {
+                if (len <= downTo)
+                {
+                    writeBytes(dest, block, downTo - len, len);
+                    break;
+                }
+                else
+                {
+                    len -= downTo;
+                    writeBytes(dest + len, block, 0, downTo);
+                    blockIndex--;
+                    block = blocks[blockIndex];
+                    downTo = blockSize;
+                }
+            }
+        }
+
+        public void skipBytes(int len)
+        {
+            while (len > 0)
+            {
+                int chunk = blockSize - nextWrite;
+                if (len <= chunk)
+                {
+                    nextWrite += len;
+                    break;
+                }
+                else
+                {
+                    len -= chunk;
+                    current = new byte[blockSize];
+                    blocks.Add(current);
+                    nextWrite = 0;
+                }
+            }
+        }
+        public void writeInt(long pos, int value)
+        {
+            int blockIndex = (int)(pos >> blockBits);
+            int upTo = (int)(pos & blockMask);
+            byte[] block = blocks[blockIndex];
+            int shift = 24;
+            for (int i = 0; i < 4; i++)
+            {
+                block[upTo++] = (byte)(value >> shift);
+                shift -= 8;
+                if (upTo == blockSize)
+                {
+                    upTo = 0;
+                    blockIndex++;
+                    block = blocks[blockIndex];
+                }
+            }
+        }
+
+        public void reverse(long srcPos, long destPos)
+        {
+            Debug.Assert(srcPos < destPos);
+            Debug.Assert(destPos < getPosition());
+
+            int srcBlockIndex = (int)(srcPos >> blockBits);
+            int src = (int)(srcPos & blockMask);
+            byte[] srcBlock = blocks[srcBlockIndex];
+
+            int destBlockIndex = (int)(destPos >> blockBits);
+            int dest = (int)(destPos & blockMask);
+            byte[] destBlock = blocks[destBlockIndex];
+
+            int limit = (int)(destPos - srcPos + 1) / 2;
+            for (int i = 0; i < limit; i++)
+            {
+                byte b = srcBlock[src];
+                srcBlock[src] = destBlock[dest];
+                destBlock[dest] = b;
+                src++;
+                if (src == blockSize)
+                {
+                    srcBlockIndex++;
+                    srcBlock = blocks[srcBlockIndex];
+                    src = 0;
+                }
+
+                dest--;
+                if (dest == -1)
+                {
+                    destBlockIndex--;
+                    destBlock = blocks[destBlockIndex];
+                    dest = blockSize - 1;
+                }
+            }
+        }
+
+
         public long getPosition()
         {
             return ((long)blocks.Count - 1) * blockSize + nextWrite;
@@ -59,7 +226,11 @@ namespace Fst
                 blockIndex--;
                 nextWrite = blockSize;
             }
-            blocks.RemoveRange(blockIndex + 1, blocks.Count);
+            int from = blockIndex + 1;
+            int to = blocks.Count;
+            if(from != to) {
+                blocks.RemoveRange(from, to);
+            }
             if (newLen == 0)
             {
                 current = null;
@@ -78,7 +249,8 @@ namespace Fst
 
         BytesReader getReverseReader(Boolean allowSingle)
         {
-            if (allowSingle && blocks.Count == 1) {
+            if (allowSingle && blocks.Count == 1)
+            {
                 return new ReverseBytesReader(blocks[0]);
             }
             return new BytesStoreReverseReader(this);
