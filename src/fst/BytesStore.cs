@@ -73,6 +73,8 @@ namespace Fst
 
         public void writeBytes(long dest, byte[] b, int offset, int len)
         {
+            Debug.Assert(dest+len <= getPosition());
+            
             long end = dest + len;
             int blockIndex = (int)(end >> blockBits);
             int downTo = (int)(end & blockMask);
@@ -227,9 +229,9 @@ namespace Fst
                 nextWrite = blockSize;
             }
             int from = blockIndex + 1;
-            int to = blocks.Count;
-            if(from != to) {
-                blocks.RemoveRange(from, to);
+            if(from < blocks.Count) {
+                int count = blocks.Count - from;            
+                blocks.RemoveRange(from, count);
             }
             if (newLen == 0)
             {

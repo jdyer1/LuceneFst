@@ -8,7 +8,7 @@ namespace Fst
 {
     public class TestBytesStore
     {
-        public static readonly ILogger log = new LoggerConfiguration().MinimumLevel.Debug().WriteTo.Console().CreateLogger();
+        public static readonly ILogger log = new LoggerConfiguration().MinimumLevel.Information().WriteTo.Console().CreateLogger();
         private const int seed = 1;
         private readonly RandomTester r = new RandomTester(seed);
 
@@ -29,13 +29,13 @@ namespace Fst
                 while (pos < numBytes)
                 {
                     int op = r.intBetween(0, 7);
-                    log.Debug("> cycle pos={pos} op={op}", pos, op);
+                    log.Information("> cycle pos={pos} op={op}", pos, op);
                     switch (op)
                     {
                         case 0:
                             {
                                 byte b = (byte)r.intBetween(0, 255);
-                                log.Debug(">> writeByte b={b}", b);
+                                log.Information(">> writeByte b={b}", b);
                                 expected[pos++] = b;
                                 bytes.writeByte(b);
                                 break;
@@ -45,7 +45,7 @@ namespace Fst
                                 int len = r.r().Next(Math.Min(numBytes - pos, 100));
                                 byte[] temp = new byte[len];
                                 r.bytes(temp);
-                                log.Debug(">> writeBytes len={len} bytes={bytes}", len, bytes);
+                                log.Information(">> writeBytes len={len} bytes={bytes}", len, bytes);
                                 Array.Copy(temp, 0, expected, pos, temp.Length);
                                 bytes.writeBytes(temp, 0, temp.Length);
                                 pos += len;
@@ -57,7 +57,7 @@ namespace Fst
                                 {
                                     int x = r.r().Next();
                                     int randomPos = r.r().Next(pos - 4);
-                                    log.Debug(">> abs writeInt pos={pos} x={x}", randomPos, x);
+                                    log.Information(">> abs writeInt pos={pos} x={x}", randomPos, x);
                                     bytes.writeInt(randomPos, x);
                                     expected[randomPos++] = (byte)(x >> 24);
                                     expected[randomPos++] = (byte)(x >> 16);
@@ -80,8 +80,8 @@ namespace Fst
                                     {
                                         start = r.r().Next(pos - len);
                                     }
-                                    int end = start + len + 1;
-                                    log.Debug(">> reverse start={start} end={end} len={len}, pos={pos}", start, end, len, pos);
+                                    int end = start + len - 1;
+                                    log.Information(">> reverse start={start} end={end} len={len}, pos={pos}", start, end, len, pos);
                                     bytes.reverse(start, end);
 
                                     while (start <= end)
@@ -102,7 +102,8 @@ namespace Fst
                                     int randomPos = r.r().Next(pos - 1);
                                     int len = r.intBetween(1, Math.Min(pos - randomPos - 1, 100));
                                     byte[] temp = new byte[len];
-                                    log.Debug(">> abs writeBytes pos={randomPos} len={len} bytes={bytes}", randomPos, len, temp);
+                                    r.r().NextBytes(temp);
+                                    log.Information(">> abs writeBytes pos={randomPos} len={len} bytes={bytes}", randomPos, len, temp);
                                     Array.Copy(temp, 0, expected, randomPos, temp.Length);
                                     bytes.writeBytes(randomPos, temp, 0, temp.Length);
                                 }
@@ -115,7 +116,7 @@ namespace Fst
                                     int src = r.r().Next(pos - 1);
                                     int dest = r.intBetween(src + 1, pos - 1);
                                     int len = r.intBetween(1, Math.Min(300, pos - dest));
-                                    log.Debug(">> copyBytes src={src} dest={dest} len={len}", src, dest, len);
+                                    log.Information(">> copyBytes src={src} dest={dest} len={len}", src, dest, len);
                                     Array.Copy(expected, src, expected, dest, len);
                                     bytes.copyBytes(src, dest, len);
                                 }
@@ -124,7 +125,7 @@ namespace Fst
                         case 6:
                             {
                                 int len = r.r().Next(Math.Min(100, numBytes - pos));
-                                log.Debug(">> skip len={len}", len);
+                                log.Information(">> skip len={len}", len);
                                 pos += len;
                                 bytes.skipBytes(len);
                                 if (len > 0)
@@ -140,7 +141,7 @@ namespace Fst
                                 {
                                     int dest = r.r().Next(pos);
                                     byte b = (byte)r.r().Next(256);
-                                    log.Debug(">> abs writeByte dest={len} byte={b}", dest, b);
+                                    log.Information(">> abs writeByte dest={len} byte={b}", dest, b);
                                     expected[dest] = b;
                                     bytes.writeByte(dest, b);
                                 }
@@ -158,10 +159,10 @@ namespace Fst
                         pos -= len;
                         Array.Clear(expected, pos, len);
                     }
-                    if (pos > 0 && r.r().Next(200) == 17)
+                    /*if (pos > 0 && r.r().Next(200) == 17)
                     {
                         verify(bytes, expected, pos);
-                    }
+                    }*/
 
                 }
 
@@ -277,7 +278,7 @@ namespace Fst
                     else
                     {
                         expectedPos = pos + numBytes;
-                        left = (int)brOps.getPosition();
+                        left = (int) (totalLength - brOps.getPosition());
                     }
 
                     Assert.Equal(expectedPos, brOps.getPosition());
