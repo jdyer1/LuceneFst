@@ -15,7 +15,7 @@ namespace Fst
         [Fact]
         public void test()
         {
-            int iters = r.intBetween(10, 20);
+            int iters = r.intBetween(10, 100);
             int maxBytes = 20000;
             for (int iter = 0; iter < iters; iter++)
             {
@@ -26,10 +26,11 @@ namespace Fst
                 log.Information("TEST: iter={iter} numBytes={numBytes}, blockBits={blockBits}", iter, numBytes, blockBits);
 
                 int pos = 0;
+                int subIter = 0;
                 while (pos < numBytes)
                 {
                     int op = r.intBetween(0, 7);
-                    log.Information("> cycle pos={pos} op={op}", pos, op);
+                    log.Information("> cycle pos={pos} op={op}, subIter={subIter}", pos, op, subIter);
                     switch (op)
                     {
                         case 0:
@@ -159,11 +160,11 @@ namespace Fst
                         pos -= len;
                         Array.Clear(expected, pos, len);
                     }
-                    /*if (pos > 0 && r.r().Next(200) == 17)
+                    if (pos > 0 && r.r().Next(200) == 17)
                     {
                         verify(bytes, expected, pos);
-                    }*/
-
+                    }
+                    subIter++;
                 }
 
                 BytesStore bytesToVerify;
@@ -176,6 +177,7 @@ namespace Fst
                 {
                     bytesToVerify = bytes;
                 }
+                
                 verify(bytesToVerify, expected, numBytes);
             }
 

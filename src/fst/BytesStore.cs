@@ -305,6 +305,7 @@ namespace Fst
                     {
                         Array.Copy(current, nextRead, b, offset, len);
                         nextRead += len;
+                        break;
                     }
                     else
                     {
