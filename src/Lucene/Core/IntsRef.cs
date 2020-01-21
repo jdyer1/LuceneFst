@@ -33,7 +33,27 @@ namespace Lucene.Core
 
         public int CompareTo(object obj)
         {
-            return 0; //TODO
+            if (!(obj is IntsRef))
+            {
+                throw new ArgumentException("Must compare to IntsRef.");
+            }
+            IntsRef that = (IntsRef)obj;
+            int len = Math.Min(this.length, that.length);
+            for (int i = 0; i < len; i++)
+            {
+                int aInt = this.ints[i + this.offset];
+                int bInt = that.ints[i + that.offset];
+                if (aInt > bInt)
+                {
+                    return 1;
+                }
+                else if (aInt < bInt)
+                {
+                    return -1;
+                }
+                return this.length - that.length;
+            }
+            return 0;
         }
 
         public Object Clone()

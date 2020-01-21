@@ -31,6 +31,20 @@ namespace Lucene.Core
 
             Assert.False(i.Equals(i2));
         }
+        [Fact]
+        public void testCompare()
+        {
+            int[] i1 = new int[] { 1, 2, 3, 4 };
+            int[] i2 = new int[] { 2, 3, 4, 5 };
+
+            IntsRef ir1 = new IntsRef(i1, 0, 4);
+            IntsRef ir2 = new IntsRef(i2, 0, 4);
+            Assert.True(ir1.CompareTo(ir2) < 0);
+
+            ir1 = new IntsRef(i1, 1, 3);
+            ir2 = new IntsRef(i2, 0, 3);
+            Assert.True(ir1.CompareTo(ir2) == 0);
+        }
 
 
     }
