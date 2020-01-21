@@ -46,6 +46,12 @@ namespace Lucene.Core
             br2 = new BytesRef(new byte[] { 1, 3, 4 }, 0, 3);
             Assert.True(br1.CompareTo(br2) < 0);            
         }
+        [Fact]
+        public void testStringConstructor() {
+            BytesRef br1 = new BytesRef("abcde");
+            BytesRef br2 = new BytesRef(new byte[] { (byte)'a', (byte)'b', (byte)'c', (byte)'d', (byte)'e' });
+            Assert.Equal(br1, br2);
+        }
 
 
     }

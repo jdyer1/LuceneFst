@@ -38,6 +38,11 @@ namespace Lucene.Core
             Debug.Assert(isValid());
         }
 
+        public BytesRef(String s) : this(new byte[BytesRef.maxUTF8Length(s.Length)])
+        {
+            this.length = BytesRef.UTF16toUTF8(s, 0, s.Length, this.bytes, 0);
+        }
+
 
         public int CompareTo(object obj)
         {
@@ -97,8 +102,8 @@ namespace Lucene.Core
             return true;
         }
 
-        //TODO:  Lucene's BytesRef 8.x uses MurmurHash3 with
-        //       a unique seed based on the system clock.
+        ///TODO:  Lucene's BytesRef 8.x uses MurmurHash3 with
+        ///       a unique seed based on the system clock.
         public override int GetHashCode()
         {
             int prime = 13;
@@ -130,7 +135,7 @@ namespace Lucene.Core
         }
         private static readonly long UNI_MAX_BMP = 0x0000FFFF;
         private static readonly long HALF_MASK = 0x3FFL;
-        //Taken from: org.apache.lucene.util.UnicodeUtil#UTF8toUTF16
+        ///Taken from: org.apache.lucene.util.UnicodeUtil#UTF8toUTF16
         public String utf8ToString()
         {
             char[] outChar = new char[length];
@@ -172,6 +177,76 @@ namespace Lucene.Core
                 }
             }
             return new String(outChar, 0, stringOffset);
+        }
+
+        private static readonly int MAX_UTF8_BYTES_PER_CHAR = 3;
+        ///Taken from: org.apache.lucene.util.UnicodeUtil#maxUTF8Length
+        private static int maxUTF8Length(int utf16Length)
+        {
+            checked
+            {
+                return utf16Length * MAX_UTF8_BYTES_PER_CHAR;
+            }
+        }
+        private static readonly int UNI_SUR_HIGH_START = 0xD800;
+        private static readonly int UNI_SUR_LOW_START = 0xDC00;
+        private static readonly int HALF_SHIFT = 10;
+        private static readonly long MIN_SUPPLEMENTARY_CODE_POINT = 0x010000;
+        private static readonly long SURROGATE_OFFSET = MIN_SUPPLEMENTARY_CODE_POINT - (UNI_SUR_HIGH_START << HALF_SHIFT) - UNI_SUR_LOW_START;
+
+        /// Taken from org.apache.lucene.util.UnicodeUtil#UTF16toUTF8 .
+        /// Populates the UTF-8 bytes in "bOut".
+        /// <returns>the final output offset (outOffset + number of bytes written)</returns>
+        private static int UTF16toUTF8(String s, int offset, int length, byte[] bOut, int outOffset)
+        {
+            int end = offset + length;
+
+            int upto = outOffset;
+            for (int i = offset; i < end; i++)
+            {
+                int code = (int)s[i];
+
+                if (code < 0x80)
+                    bOut[upto++] = (byte)code;
+                else if (code < 0x800)
+                {
+                    bOut[upto++] = (byte)(0xC0 | (code >> 6));
+                    bOut[upto++] = (byte)(0x80 | (code & 0x3F));
+                }
+                else if (code < 0xD800 || code > 0xDFFF)
+                {
+                    bOut[upto++] = (byte)(0xE0 | (code >> 12));
+                    bOut[upto++] = (byte)(0x80 | ((code >> 6) & 0x3F));
+                    bOut[upto++] = (byte)(0x80 | (code & 0x3F));
+                }
+                else
+                {
+                    // surrogate pair
+                    // confirm valid high surrogate
+                    if (code < 0xDC00 && (i < end - 1))
+                    {
+                        int utf32 = (int)s[i + 1];
+                        // confirm valid low surrogate and write pair
+                        if (utf32 >= 0xDC00 && utf32 <= 0xDFFF)
+                        {
+                            utf32 = (int)((code << 10) + utf32 + SURROGATE_OFFSET);
+                            i++;
+                            bOut[upto++] = (byte)(0xF0 | (utf32 >> 18));
+                            bOut[upto++] = (byte)(0x80 | ((utf32 >> 12) & 0x3F));
+                            bOut[upto++] = (byte)(0x80 | ((utf32 >> 6) & 0x3F));
+                            bOut[upto++] = (byte)(0x80 | (utf32 & 0x3F));
+                            continue;
+                        }
+                    }
+                    // replace unpaired surrogate or out-of-order low surrogate
+                    // with substitution character
+                    bOut[upto++] = (byte)0xEF;
+                    bOut[upto++] = (byte)0xBF;
+                    bOut[upto++] = (byte)0xBD;
+                }
+            }
+
+            return upto;
         }
 
         public bool isValid()
