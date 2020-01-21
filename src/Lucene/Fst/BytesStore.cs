@@ -2,7 +2,7 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System;
 
-namespace Fst
+namespace Lucene.Fst
 {
     class BytesStore
     {

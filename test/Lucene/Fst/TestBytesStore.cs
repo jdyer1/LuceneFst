@@ -4,7 +4,7 @@ using Xunit;
 using TestUtil;
 using Serilog;
 
-namespace Fst
+namespace Lucene.Fst
 {
     public class TestBytesStore
     {

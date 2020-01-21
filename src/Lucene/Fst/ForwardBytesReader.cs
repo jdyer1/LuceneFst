@@ -1,6 +1,6 @@
 using System;
 
-namespace Fst {
+namespace Lucene.Fst {
     public class ForwardBytesReader : BytesReader
     {
         private readonly byte[] bytes;

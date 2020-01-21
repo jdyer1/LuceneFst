@@ -1,6 +1,6 @@
 using System;
 
-namespace Fst
+namespace Lucene.Fst
 {
     public class ReverseBytesReader : BytesReader
     {
