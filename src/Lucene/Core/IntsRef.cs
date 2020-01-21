@@ -50,10 +50,9 @@ namespace Lucene.Core
                 else if (aInt < bInt)
                 {
                     return -1;
-                }
-                return this.length - that.length;
+                }                
             }
-            return 0;
+            return this.length - that.length;
         }
 
         public Object Clone()
