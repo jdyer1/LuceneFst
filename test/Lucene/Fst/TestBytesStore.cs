@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices.WindowsRuntime;
-using System;
+﻿using System;
 using Xunit;
 using TestUtil;
 using Serilog;
