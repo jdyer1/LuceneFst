@@ -2,7 +2,7 @@ using System;
 
 namespace Lucene.Fst
 {
-    abstract class Outputs<T>
+    public abstract class Outputs<T>
     {
         public abstract T common(T output1, T output2);
 

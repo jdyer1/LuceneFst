@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System;
 using Xunit;
 using TestUtil;
@@ -10,6 +11,8 @@ namespace Lucene.Fst
     public class TestFSTs
     {
         public static readonly ILogger log = new LoggerConfiguration().MinimumLevel.Information().WriteTo.Console().CreateLogger();
+        private const int seed = 1;
+        private readonly RandomTester r = new RandomTester(seed);
 
         [Fact]
         public void testBasicFSA()
@@ -30,10 +33,20 @@ namespace Lucene.Fst
                 {
                     terms2[idx] = toIntsRef(strings2[idx], inputMode);
                 }
+
+                Array.Sort(terms);
+                Array.Sort(terms2);
+
+                Outputs<Object> outputs = NoOutputs.getSingleton();
+                Object NO_OUTPUT = outputs.getNoOutput();
+                List<InputOutput<Object>> pairs = new List<InputOutput<object>>();
+                foreach (IntsRef term in terms)
+                {
+                    pairs.Add(new InputOutput<object>(term, NO_OUTPUT));
+                }
+                new FSTTester<Object>(r, inputMode, pairs, outputs, false).doTest();
             }
-            Array.Sort(terms);
-            Array.Sort(terms2);
-            log.Information("test");
+
         }
 
         private IntsRef toIntsRef(String s, int inputMode)
@@ -42,8 +55,9 @@ namespace Lucene.Fst
             {
                 BytesRef br = new BytesRef(s);
                 int[] iArr = new int[br.length];
-                for(int i=0 ; i<br.length ; i++) {
-                    iArr[i] = (int) br.bytes[br.offset + i];
+                for (int i = 0; i < br.length; i++)
+                {
+                    iArr[i] = (int)br.bytes[br.offset + i];
                 }
                 IntsRef ir = new IntsRef(iArr, 0, br.length);
                 return ir;
