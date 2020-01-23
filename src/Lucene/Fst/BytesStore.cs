@@ -4,7 +4,7 @@ using System;
 
 namespace Lucene.Fst
 {
-    class BytesStore
+    public class BytesStore
     {
 
 
@@ -73,8 +73,8 @@ namespace Lucene.Fst
 
         public void writeBytes(long dest, byte[] b, int offset, int len)
         {
-            Debug.Assert(dest+len <= getPosition());
-            
+            Debug.Assert(dest + len <= getPosition());
+
             long end = dest + len;
             int blockIndex = (int)(end >> blockBits);
             int downTo = (int)(end & blockMask);
@@ -155,6 +155,12 @@ namespace Lucene.Fst
                 }
             }
         }
+
+        public void writeShort(short i)
+        {
+            writeByte((byte)(i >> 8));
+            writeByte((byte)i);
+        }
         public void writeInt(long pos, int value)
         {
             int blockIndex = (int)(pos >> blockBits);
@@ -172,6 +178,35 @@ namespace Lucene.Fst
                     block = blocks[blockIndex];
                 }
             }
+        }
+        public void writeVInt(int i)
+        {
+            while ((i & ~0x7F) != 0)
+            {
+                writeByte((byte)((i & 0x7F) | 0x80));
+                i = ((ushort)i) >> 7;
+            }
+            writeByte((byte)i);
+        }
+
+        public void writeVLong(long i)
+        {
+            if (i < 0)
+            {
+                throw new ArgumentException("cannot write negative vLong (got: " + i + ")");
+            }
+            writeSignedVLong(i);
+        }
+
+        // write a potentially negative vLong
+        private void writeSignedVLong(long i)
+        {
+            while ((i & ~0x7FL) != 0L)
+            {
+                writeByte((byte)((i & 0x7FL) | 0x80L));
+                i = ((uint)i) >> 7;
+            }
+            writeByte((byte)i);
         }
 
         public void reverse(long srcPos, long destPos)
@@ -229,8 +264,9 @@ namespace Lucene.Fst
                 nextWrite = blockSize;
             }
             int from = blockIndex + 1;
-            if(from < blocks.Count) {
-                int count = blocks.Count - from;            
+            if (from < blocks.Count)
+            {
+                int count = blocks.Count - from;
                 blocks.RemoveRange(from, count);
             }
             if (newLen == 0)

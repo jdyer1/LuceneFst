@@ -22,10 +22,7 @@ namespace Lucene.Fst
             output = owner.NO_OUTPUT;
             this.depth = depth;
         }
-        public bool isCompiled()
-        {
-            return false;
-        }
+        public bool isCompiled() => false;
 
         public void clear()
         {
