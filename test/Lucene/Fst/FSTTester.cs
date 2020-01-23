@@ -27,8 +27,10 @@ namespace Lucene.Fst
         public void doTest()
         {
             INPUT_TYPE inputType = inputMode == 0 ? INPUT_TYPE.BYTE1 : INPUT_TYPE.BYTE4;
-            Builder<T> builder = new Builder<T>()
-
+            Builder<T> builder = new Builder<T>(inputType, outputs, 15);
+            foreach(InputOutput<T> pair in pairs) {
+                builder.add(pair.input, pair.output);
+            }
 
         }
     }
