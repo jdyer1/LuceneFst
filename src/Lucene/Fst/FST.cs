@@ -31,7 +31,8 @@ namespace Lucene.Fst
         public readonly Outputs<T> outputs;
         private readonly int bytesPageBits;
         public readonly BytesStore bytes;
-        private T emptyOutput;
+        public T emptyOutput;
+        private long startNode = -1;
         public FST(INPUT_TYPE inputType, Outputs<T> outputs, int bytesPageBits)
         {
             this.inputType = inputType;
@@ -231,6 +232,21 @@ namespace Lucene.Fst
             {
                 bOut.writeVInt(v);
             }
+        }
+
+        public void finish(long newStartNode)
+        {
+            Debug.Assert(newStartNode <= bytes.getPosition());
+            if (startNode != -1)
+            {
+                throw new InvalidOperationException("already finished");
+            }
+            if (newStartNode == FINAL_END_NODE && emptyOutput != null)
+            {
+                newStartNode = 0;
+            }
+            startNode = newStartNode;
+            bytes.finish();
         }
     }
     public enum INPUT_TYPE { BYTE1, BYTE2, BYTE4 }

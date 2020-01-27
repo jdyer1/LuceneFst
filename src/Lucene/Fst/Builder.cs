@@ -279,5 +279,63 @@ namespace Lucene.Fst
             }
         }
 
+        /// Returns final FST.  NOTE: this will return null if
+        ///nothing is accepted by the FST. 
+        public FST<T> finish()
+        {
+            UnCompiledNode<T> root = frontier[0];
+
+            // minimize nodes in the last word's suffix
+            freezeTail(0);
+            if (root.inputCount < minSuffixCount1 || root.inputCount < minSuffixCount2 || root.numArcs == 0)
+            {
+                if (fst.emptyOutput == null)
+                {
+                    return null;
+                }
+                else if (minSuffixCount1 > 0 || minSuffixCount2 > 0)
+                {
+                    // empty string got pruned
+                    return null;
+                }
+            }
+            else
+            {
+                if (minSuffixCount2 != 0)
+                {
+                    compileAllTargets(root, lastInput.length);
+                }
+            }
+            fst.finish(compileNode(root, lastInput.length).node);
+
+            return fst;
+        }
+
+        private void compileAllTargets(UnCompiledNode<T> node, int tailLength)
+        {
+            for (int arcIdx = 0; arcIdx < node.numArcs; arcIdx++)
+            {
+                Arc<T> arc = node.arcs[arcIdx];
+                if (!arc.target.isCompiled())
+                {
+                    // not yet compiled
+                    UnCompiledNode<T> n = (UnCompiledNode<T>)arc.target;
+                    if (n.numArcs == 0)
+                    {
+                        arc.isFinal = n.isFinal = true;
+                    }
+                    arc.target = compileNode(n, tailLength - 1);
+                }
+            }
+        }
+        
+        public long getNodeCount()
+        {
+            // 1+ in order to count the -1 implicit final node
+            return 1 + nodeCount;
+        }
+
+        public long getArcCount() => arcCount;
+
     }
 }

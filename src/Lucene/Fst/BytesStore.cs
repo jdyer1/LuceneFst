@@ -280,6 +280,17 @@ namespace Lucene.Fst
             Debug.Assert(newLen == getPosition());
         }
 
+        public void finish()
+        {
+            if (current != null)
+            {
+                byte[] lastBuffer = new byte[nextWrite];
+                Array.Copy(current, 0, lastBuffer, 0, nextWrite);
+                blocks[blocks.Count - 1] = lastBuffer;
+                current = null;
+            }
+        }
+
         public BytesReader getReverseReader()
         {
             return getReverseReader(true);
