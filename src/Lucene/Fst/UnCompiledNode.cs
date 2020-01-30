@@ -44,7 +44,14 @@ namespace Lucene.Fst
         public void addArc(int label, Node target)
         {
             Debug.Assert(label >= 0);
-            Debug.Assert(numArcs == 0 || label > arcs[numArcs - 1].label, "arc[numArcs-1].label=" + arcs[numArcs - 1].label + " new label=" + label + " numArcs=" + numArcs);
+#if DEBUG
+            if (numArcs > 0)
+            {
+                Debug.Assert(label > arcs[numArcs - 1].label,
+                "arc[numArcs-1].label=" + arcs[numArcs - 1].label + " new label=" + label + " numArcs=" + numArcs);
+            }
+#endif
+
             if (numArcs == arcs.Length)
             {
                 Arc<T>[] newArcs = ArrayUtil.grow(arcs, numArcs + 1);
@@ -79,7 +86,6 @@ namespace Lucene.Fst
         }
         public void setLastOutput(int labelToMatch, T newOutput)
         {
-            // TODO: Debug.Assert(owner.validOutput(newOutput);
             Debug.Assert(numArcs > 0);
             Arc<T> arc = arcs[numArcs - 1];
             Debug.Assert(arc.label == labelToMatch);
@@ -93,14 +99,12 @@ namespace Lucene.Fst
             for (int arcIdx = 0; arcIdx < numArcs; arcIdx++)
             {
                 arcs[arcIdx].output = owner.fst.outputs.add(outputPrefix, arcs[arcIdx].output);
-                // TODO: Debug.Assert(owner.validOutput(arcs[arcIdx].output));
             }
 
             if (isFinal)
             {
                 T output1 = owner.fst.outputs.add(outputPrefix, output);
                 this.output = output1;
-                // TODO: Debug.Assert(owner.validOutput(this.output));
             }
         }
 
