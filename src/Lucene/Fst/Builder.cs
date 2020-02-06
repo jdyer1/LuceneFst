@@ -26,6 +26,7 @@ namespace Lucene.Fst
 
         public int[] numBytesPerArc = new int[4];
         public int[] numLabelBytesPerArc = new int[4];
+        public readonly FixedLengthArcsBuffer fixedLengthArcsBuffer = new FixedLengthArcsBuffer();
         public long arcCount;
         public long nodeCount;
         public long binarySearchNodeCount;

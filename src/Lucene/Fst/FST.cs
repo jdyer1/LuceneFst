@@ -16,6 +16,11 @@ namespace Lucene.Fst
 
         private static readonly int BIT_ARC_HAS_FINAL_OUTPUT = 1 << 5;
 
+        /// Value of the arc flags to declare a node with fixed length arcs
+        /// designed for binary search.
+        /// We use this as a marker because this one flag is illegal by itself.
+        public static readonly byte ARCS_FOR_BINARY_SEARCH = 1 << 5;
+
         private static readonly int FIXED_LENGTH_ARC_SHALLOW_DEPTH = 3;
 
         private static readonly int FIXED_LENGTH_ARC_SHALLOW_NUM_ARCS = 5;
@@ -204,8 +209,37 @@ namespace Lucene.Fst
         }
         private void writeNodeForBinarySearch(Builder<T> builder, UnCompiledNode<T> nodeIn, long startAddress, int maxBytesPerArc)
         {
-            //TODO
-            throw new NotImplementedException();
+            // Build the header in a buffer.
+            // It is a false/special arc which is in fact a node header with node flags followed by node metadata.
+            builder.fixedLengthArcsBuffer
+                .resetPosition()
+                .writeByte(ARCS_FOR_BINARY_SEARCH)
+                .writeVInt(nodeIn.numArcs)
+                .writeVInt(maxBytesPerArc);
+            int headerLen = builder.fixedLengthArcsBuffer.getPosition();
+
+            // Expand the arcs in place, backwards.
+            long srcPos = builder.bytes.getPosition();
+            long destPos = startAddress + headerLen + nodeIn.numArcs * maxBytesPerArc;
+            Debug.Assert(destPos >= srcPos);
+            if (destPos > srcPos)
+            {
+                builder.bytes.skipBytes((int)(destPos - srcPos));
+                for (int arcIdx = nodeIn.numArcs - 1; arcIdx >= 0; arcIdx--)
+                {
+                    destPos -= maxBytesPerArc;
+                    int arcLen = builder.numBytesPerArc[arcIdx];
+                    srcPos -= arcLen;
+                    if (srcPos != destPos)
+                    {
+                        Debug.Assert(destPos > srcPos, "destPos=" + destPos + " srcPos=" + srcPos + " arcIdx=" + arcIdx + " maxBytesPerArc=" + maxBytesPerArc + " arcLen=" + arcLen + " nodeIn.numArcs=" + nodeIn.numArcs);
+                        builder.bytes.copyBytes(srcPos, destPos, arcLen);
+                    }
+                }
+            }
+
+            // Write the header.
+            builder.bytes.writeBytes(startAddress, builder.fixedLengthArcsBuffer.getBytes(), 0, headerLen);
         }
 
         private bool shouldExpandNodeWithFixedLengthArcs(Builder<T> builder, UnCompiledNode<T> node)

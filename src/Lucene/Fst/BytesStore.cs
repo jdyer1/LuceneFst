@@ -2,9 +2,11 @@ using System.Diagnostics;
 using System.Collections.Generic;
 using System;
 
+using Lucene.Core;
+
 namespace Lucene.Fst
 {
-    public class BytesStore
+    public class BytesStore : DataOutput
     {
 
 
@@ -32,7 +34,7 @@ namespace Lucene.Fst
             block[(int)(dest & blockMask)] = b;
         }
 
-        public void writeByte(byte b)
+        public override void writeByte(byte b)
         {
             if (nextWrite == blockSize)
             {
@@ -43,7 +45,7 @@ namespace Lucene.Fst
             current[nextWrite++] = b;
         }
 
-        public void writeBytes(byte[] b, int offset, int len)
+        public override void writeBytes(byte[] b, int offset, int len)
         {
             while (len > 0)
             {
@@ -156,11 +158,6 @@ namespace Lucene.Fst
             }
         }
 
-        public void writeShort(short i)
-        {
-            writeByte((byte)(i >> 8));
-            writeByte((byte)i);
-        }
         public void writeInt(long pos, int value)
         {
             int blockIndex = (int)(pos >> blockBits);
@@ -179,35 +176,7 @@ namespace Lucene.Fst
                 }
             }
         }
-        public void writeVInt(int i)
-        {
-            while ((i & ~0x7F) != 0)
-            {
-                writeByte((byte)((i & 0x7F) | 0x80));
-                i = ((ushort)i) >> 7;
-            }
-            writeByte((byte)i);
-        }
 
-        public void writeVLong(long i)
-        {
-            if (i < 0)
-            {
-                throw new ArgumentException("cannot write negative vLong (got: " + i + ")");
-            }
-            writeSignedVLong(i);
-        }
-
-        // write a potentially negative vLong
-        private void writeSignedVLong(long i)
-        {
-            while ((i & ~0x7FL) != 0L)
-            {
-                writeByte((byte)((i & 0x7FL) | 0x80L));
-                i = ((uint)i) >> 7;
-            }
-            writeByte((byte)i);
-        }
 
         public void reverse(long srcPos, long destPos)
         {
